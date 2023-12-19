@@ -24,7 +24,7 @@ class GCCFlagInfo(FlagInfo):
 def read_gcc_opts(path):
     search_space = dict() # pair: flag, configs
     # special case handling
-    search_space["stdOptLv"] = GCCFlagInfo(name="stdOptLv", configs=[1,2,3], isParametric=True, stdOptLv=-1)
+    search_space["stdOptLv"] = GCCFlagInfo(name="stdOptLv", configs=[1], isParametric=True, stdOptLv=-1)
     with open(path, "r") as fp:
         stdOptLv = 0
         for raw_line in fp.read().split('\n'):
@@ -267,7 +267,7 @@ if __name__ == "__main__":
     '''
     gcc_optimization_info = "gcc_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
-    default_setting = {"stdOptLv":3}
+    default_setting = {"stdOptLv":1}
 
     os.chdir(args.run_dir)
     evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)

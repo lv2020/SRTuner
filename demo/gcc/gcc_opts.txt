@@ -1,107 +1,131 @@
 #O1
- -fbranch-count-reg
- -fcombine-stack-adjustments
- -fcompare-elim
- -fcprop-registers
- -fdefer-pop
- -fforward-propagate
- -fguess-branch-probability
- -fif-conversion
- -fif-conversion2
- -finline
- -finline-functions-called-once
- -fipa-profile
- -fipa-pure-const
- -fipa-reference
- -fmerge-constants
- -fmove-loop-invariants
- -fomit-frame-pointer
- -freorder-blocks
- -freorder-blocks-algorithm=,stc,simple
- -fshrink-wrap
- -fsplit-wide-types
- -fssa-phiopt
- -ftoplevel-reorder
- -ftree-bit-ccp
- -ftree-builtin-call-dce
- -ftree-ccp
- -ftree-ch
- -ftree-coalesce-vars
- -ftree-copy-prop
- -ftree-dce
- -ftree-dominator-opts
- -ftree-dse
- -ftree-fre
- -ftree-pta
- -ftree-sink
- -ftree-slsr
- -ftree-sra
- -ftree-ter
-
- #O2
- -falign-labels
- -fcaller-saves
- -fcode-hoisting
- -fcrossjumping
- -fcse-follow-jumps
- -fdevirtualize
- -fdevirtualize-speculatively
- -fexpensive-optimizations
- -fgcse
- -fhoist-adjacent-loads
- -findirect-inlining
- -finline-small-functions
- -fipa-bit-cp
- -fipa-cp
- -fipa-icf
- -fipa-icf-functions
- -fipa-icf-variables
- -fipa-ra
- -fipa-sra
- -fipa-vrp
- -fisolate-erroneous-paths-dereference
- -flra-remat
- -foptimize-sibling-calls
- -foptimize-strlen
- -fpartial-inlining
- -fpeephole2
- -free
- -freorder-functions
- -frerun-cse-after-loop
- -fschedule-insns2
- -fstore-merging
- -fstrict-aliasing
- -fstrict-overflow
- -fthread-jumps
- -ftree-pre
- -ftree-switch-conversion
- -ftree-tail-merge
- -ftree-vrp
-
- #O3
- -fgcse-after-reload
- -finline-functions
- -fipa-cp-clone
- -fpeel-loops
- -fpredictive-commoning
- -fsplit-loops
- -fsplit-paths
- -ftree-loop-distribute-patterns
- -ftree-loop-vectorize
- -ftree-partial-pre
- -ftree-slp-vectorize
- -funswitch-loops
-
- #Online doc
- -fdce
- -fdelayed-branch
- -fdse
- -fcse-skip-blocks
- -fschedule-insns
- -falign-loops
- -falign-jumps
- -falign-functions
- -freorder-blocks-and-partition
- -fvect-cost-model=,unlimited,dynamic,cheap
- -ftree-parallelize-loops=,1,2,3,4,5,6,7,8
- -floop-parallelize-all
+-falign-functions
+-falign-jumps
+-falign-labels
+-falign-loops
+-fallow-store-data-races
+-fassociative-math
+-fassume-phsa
+-fbranch-probabilities
+-fcaller-saves
+-fcode-hoisting
+-fconserve-stack
+-fcrossjumping
+-fcse-follow-jumps
+-fcx-fortran-rules
+-fcx-limited-range
+-fdelayed-branch
+-fdelete-dead-exceptions
+-fdevirtualize
+-fdevirtualize-speculatively
+-fexceptions
+-fexpensive-optimizations
+-ffast-math
+-ffinite-loops
+-ffinite-math-only
+-ffloat-store
+-fgcse
+-fgcse-after-reload
+-fgcse-las
+-fgcse-sm
+-fgraphite
+-fgraphite-identity
+-fhandle-exceptions         		-fexceptions
+-fhoist-adjacent-loads
+-findirect-inlining
+-finline-functions
+-finline-small-functions
+-fipa-bit-cp
+-fipa-cp
+-fipa-cp-clone
+-fipa-icf
+-fipa-icf-functions
+-fipa-icf-variables
+-fipa-pta
+-fipa-ra
+-fipa-sra
+-fipa-vrp
+-fira-loop-pressure
+-fisolate-erroneous-paths-attribute
+-fisolate-erroneous-paths-dereference
+-fkeep-gc-roots-live
+-flimit-function-alignment
+-flive-range-shrinkage
+-floop-interchange
+-floop-nest-optimize
+-floop-parallelize-all
+-floop-unroll-and-jam
+-flra-remat
+-fmodulo-sched
+-fmodulo-sched-allow-regmoves
+-fnon-call-exceptions
+-fnothrow-opt
+-fopt-info
+-foptimize-sibling-calls
+-foptimize-strlen
+-fpack-struct
+-fpartial-inlining
+-fpeel-loops
+-fpeephole2
+-fpredictive-commoning
+-fprofile-partial-training
+-fprofile-reorder-functions
+-freciprocal-math
+-free
+-freorder-blocks-and-partition
+-freorder-functions
+-frerun-cse-after-loop
+-freschedule-modulo-scheduled-loops
+-frounding-math
+-frtti
+-fsave-optimization-record
+-fsched-pressure
+-fsched-spec-load
+-fsched-spec-load-dangerous
+-fsched-stalled-insns
+-fsched2-use-superblocks
+-fschedule-insns
+-fschedule-insns2
+-fsection-anchors
+-fsel-sched-pipelining
+-fsel-sched-pipelining-outer-loops
+-fsel-sched-reschedule-pipelined
+-fselective-scheduling
+-fselective-scheduling2
+-fshort-wchar
+-fsignaling-nans
+-fsingle-precision-constant
+-fsplit-loops
+-fsplit-paths
+-fsplit-wide-types-early
+-fstore-merging
+-fstrict-aliasing
+-fstrict-enums
+-fthread-jumps
+-ftracer
+-ftrapv
+-ftree-loop-distribute-patterns
+-ftree-loop-distribution
+-ftree-loop-vectorize
+-ftree-lrs
+-ftree-partial-pre
+-ftree-pre
+-ftree-slp-vectorize
+-ftree-switch-conversion
+-ftree-tail-merge
+-ftree-vectorize
+-ftree-vrp
+-funconstrained-commons
+-funroll-all-loops
+-funroll-completely-grow-size
+-funroll-loops
+-funsafe-math-optimizations
+-funswitch-loops
+-funwind-tables
+-fvar-tracking-assignments-toggle
+-fvar-tracking-uninit
+-fvariable-expansion-in-unroller
+-fversion-loops-for-strides
+-fvpt
+-fwrapv
+-fwrapv-pointer
