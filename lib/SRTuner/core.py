@@ -44,12 +44,14 @@ class SRTunerModule():
     def __init__(
             self,
             search_space,
+            args = None,
             evaluator = None,
             reward_func = None,
             opt_stage_mapping = None,
             default_perf = FLOAT_MAX,
         ):
         self.search_space = search_space
+        self.args = args
 
         if reward_func is None:
             self.reward_func = default_reward_func
@@ -80,7 +82,7 @@ class SRTunerModule():
         # [TODO] Can we remove this?
         self.current_candidate_nodes = []
         self.batch_size = 1
-        random.seed(time.time())
+        random.seed(args.random_seed)
 
 
     # This will give you candidate and leaf node

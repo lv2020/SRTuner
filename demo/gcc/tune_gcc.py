@@ -2,6 +2,9 @@ import os, subprocess, re
 
 from tuner import FlagInfo, Evaluator, FLOAT_MAX
 from tuner import RandomTuner, SRTuner
+import pickle
+import json
+import argparse
 
 # Define GCC flags
 class GCCFlagInfo(FlagInfo):
@@ -71,8 +74,10 @@ class cBenchEvaluator(Evaluator):
         super().__init__(path, num_repeats)
         self.artifact = artifact
         self.search_space = search_space
+        self.compile_config = json.load(open('new_config.f'))
 
     def build(self, str_opt_setting):
+        '''
         commands = f"""cd {self.path};
         make clean > /dev/null 2>/dev/null;
         make -j4 CCC_OPTS_ADD="{str_opt_setting}" LD_OPTS=" -o {self.artifact} -fopenmp" > /dev/null 2>/dev/null;
@@ -83,8 +88,68 @@ class cBenchEvaluator(Evaluator):
         if not os.path.exists(self.path + "/" + self.artifact):
             return -1
         return 0
+        '''
+        config = self.compile_config
+        op_seq = str_opt_setting
+        m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.o').read()
+        for f in config['files']:
+            if f.endswith('.cpp') or f.endswith('.cc'):
+                CC = 'g++ -w '
+                m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").split(".")[0].replace("..", "")}.o  > tmp').read()
+            else:
+                CC = 'gcc -w '
+                m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").split(".")[0].replace("..", "")}.o > tmp').read()
+        m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} > tmp').read()
+        if not os.path.exists(config['exe_file']):
+            return -1
+        return 0
+
+    def get_timing_result():
+        cwd = os.getcwd()
+        #run spec programs
+        if 'spec' in cwd:
+            pid = cwd.split('/')[-1]
+            os.chdir(f'../../spec_programs/{pid}')
+            os.popen(f'cp ../../spec_benchmarks/{pid}/{self.compile_config["exe_file"]} ./').read()
+            s = time.time()
+            for cmd in self.compile_config['run']:
+                process = subprocess.Popen(f'./{self.compile_config["exe_file"]} {cmd}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
+                try:
+                    return_code = process.wait(timeout=1000)
+                except:
+                    return FLOAT_MAX
+            e = time.time() - s
+            os.popen(f'rm -f {self.compile_config["exe_file"]}').read()
+            os.chdir(cwd)
+            if return_code != 0:
+                return FLOAT_MAX
+            return e
+        #for MiBench and PolyBench
+        else:
+            res = []
+            for i in range(10):
+                process = subprocess.Popen(f'LD_LIBRARY_PATH=. ./{self.compile_config["exe_file"]} {self.compile_config["run"]}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
+                try:
+                    output, error = process.communicate(timeout = 60)
+                except:
+                    return FLOAT_MAX
+                tmp = [i.strip() for i in str(error)[:-1].strip().split('\n') if 'timing' in i]
+                tmp = [i.split('timing:')[-1].strip()[:-2] for i in tmp]
+                if len(tmp) == 0:
+                    return FLOAT_MAX
+                else:
+                    t = []
+                    for i in tmp:
+                        i = i.split(' ')
+                        try:
+                            t.append(int(i[1].strip()) - int(i[0].strip()))
+                        except:
+                            continue
+                res.append(sum(t))
+            return np.median(res)
 
     def run(self, num_repeats, input_id=1):
+        '''
         run_commands = f"""cd {self.path};
         ./_ccc_check_output.clean ;
         ./__run {input_id} 2>&1;
@@ -120,10 +185,15 @@ class cBenchEvaluator(Evaluator):
 
         # Correct execution
         return tot/num_repeats
+        '''
+        return self.get_timing_result()
+
 
     def evaluate(self, opt_setting, num_repeats=-1):
         flags = convert_to_str(opt_setting, self.search_space)
+        compile_begin = time.time()
         error = self.build(flags)
+        compile_time = time.time() - compile_begin
         if error == -1:
             # Bulid error
             return FLOAT_MAX
@@ -133,9 +203,10 @@ class cBenchEvaluator(Evaluator):
             num_repeats = self.num_repeats
 
         perf = self.run(num_repeats, input_id=2)
-        self.clean()
+        #self.clean()
 
-        return perf
+        #return perf
+        return [flags, compile_time, perf]
 
 
     def clean(self):
@@ -147,6 +218,7 @@ class cBenchEvaluator(Evaluator):
 
 
 if __name__ == "__main__":
+    '''
     # Assign the number of trials as the budget.
     budget = 1000
     # Benchmark info
@@ -160,11 +232,21 @@ if __name__ == "__main__":
 
     with open("tuning_result.txt", "w") as ofp:
         ofp.write("=== Result ===\n")
+    '''
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--env', type=str, default='gcc')
+    parser.add_argument('--run_dir', type=str, default='')
+    parser.add_argument('--random_seed', type=int, default=42)
+    parser.add_argument('--steps', type = int, default = 120)
+    parser.add_argument('--time_limitation', type = int, default = None)
+    args = parser.parse_args()
+    os.chdir(args.run_dir)
+
 
     for benchmark in benchmark_list:
         path = benchmark_home + "/" + benchmark + "/src"
         evaluator = cBenchEvaluator(path, num_repeats=30, search_space=search_space)
-
+        '''
         tuners = [
             RandomTuner(search_space, evaluator, default_setting),
             SRTuner(search_space, evaluator, default_setting)
@@ -178,3 +260,6 @@ if __name__ == "__main__":
                 print(f"Tuning {benchmark} w/ {tuner.name}: {default_perf:.3f}/{best_perf:.3f} = {default_perf/best_perf:.3f}x")
                 with open("tuning_result.txt", "a") as ofp:
                     ofp.write(f"Tuning {benchmark} w/ {tuner.name}: {default_perf:.3f}/{best_perf:.3f} = {default_perf/best_perf:.3f}x\n")
+        '''
+        tuner = SRTuner(search_space, evaluator, args, default_setting)
+

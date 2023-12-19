@@ -1,5 +1,7 @@
 # Define constant
 FLOAT_MAX = float('inf')
+import pickle
+import time
 
 class FlagInfo:
     def __init__(self, name, configs):
@@ -25,9 +27,10 @@ class Evaluator:
 
 
 class Tuner:
-    def __init__(self, search_space, evaluator, name = "Base Tuner", default_setting = None):
+    def __init__(self, search_space, evaluator, args = None, name = "Base Tuner", default_setting = None):
         self.search_space = search_space
         self.evaluator = evaluator
+        self.args = args
         self.name = name
         self.default_setting = default_setting
         self.default_perf = evaluator.evaluate(default_setting)
@@ -48,10 +51,25 @@ class Tuner:
     def tune(self, budget, batch_size=1):
         best_opt_setting, best_perf = None, FLOAT_MAX
         i = 0
-        while i<budget:
+        op_his = []
+        begin = time.time()
+        while 1:
+            if self.args.time_limitation:
+                with open(f'{self.args.env}_{self.args.time_limitation}_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
+                    pickle.dump(op_his, f)
+                if time.time() - begin > self.args.time_limitation:
+                    break
+            else:
+                with open(f'{self.args.env}_{self.args.steps}_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
+                    pickle.dump(op_his, f)
+                if i > self.args.steps:
+                    break
+
             candidates = self.generate_candidates(batch_size=batch_size)
-            perfs = self.evaluate_candidates(candidates)
-        
+            res = self.evaluate_candidates(candidates)
+            res.append(time.time() - begin)
+            perf = res[-1]
+            op_his.append(res)
             i += len(candidates)
             for opt_setting, perf in zip(candidates, perfs):
                 if perf < best_perf:
