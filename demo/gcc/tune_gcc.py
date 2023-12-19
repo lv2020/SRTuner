@@ -5,7 +5,8 @@ from tuner import RandomTuner, SRTuner
 import pickle
 import json
 import argparse
-
+import time
+import numpy as np
 # Define GCC flags
 class GCCFlagInfo(FlagInfo):
     def __init__(self, name, configs, isParametric, stdOptLv):
@@ -91,20 +92,24 @@ class cBenchEvaluator(Evaluator):
         '''
         config = self.compile_config
         op_seq = str_opt_setting
+        load_lib = ''
+        if os.path.exists('libfunc.so'):
+            load_lib = '-L. -lfunc'
+        s = time.time()
         m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.o').read()
         for f in config['files']:
+            #for c++
             if f.endswith('.cpp') or f.endswith('.cc'):
                 CC = 'g++ -w '
-                m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").split(".")[0].replace("..", "")}.o  > tmp').read()
             else:
                 CC = 'gcc -w '
-                m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").split(".")[0].replace("..", "")}.o > tmp').read()
-        m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} > tmp').read()
+            m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
+        m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
         if not os.path.exists(config['exe_file']):
             return -1
         return 0
 
-    def get_timing_result():
+    def get_timing_result(self):
         cwd = os.getcwd()
         #run spec programs
         if 'spec' in cwd:
@@ -240,13 +245,12 @@ if __name__ == "__main__":
     parser.add_argument('--steps', type = int, default = 120)
     parser.add_argument('--time_limitation', type = int, default = None)
     args = parser.parse_args()
-    os.chdir(args.run_dir)
 
-
+    '''
     for benchmark in benchmark_list:
         path = benchmark_home + "/" + benchmark + "/src"
         evaluator = cBenchEvaluator(path, num_repeats=30, search_space=search_space)
-        '''
+        
         tuners = [
             RandomTuner(search_space, evaluator, default_setting),
             SRTuner(search_space, evaluator, default_setting)
@@ -260,6 +264,13 @@ if __name__ == "__main__":
                 print(f"Tuning {benchmark} w/ {tuner.name}: {default_perf:.3f}/{best_perf:.3f} = {default_perf/best_perf:.3f}x")
                 with open("tuning_result.txt", "a") as ofp:
                     ofp.write(f"Tuning {benchmark} w/ {tuner.name}: {default_perf:.3f}/{best_perf:.3f} = {default_perf/best_perf:.3f}x\n")
-        '''
-        tuner = SRTuner(search_space, evaluator, args, default_setting)
+    '''
+    gcc_optimization_info = "gcc_opts.txt"
+    search_space = read_gcc_opts(gcc_optimization_info)
+    default_setting = {"stdOptLv":3}
+
+    os.chdir(args.run_dir)
+    evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
+    tuner = SRTuner(search_space, evaluator, args, default_setting)
+    best_opt_setting, best_perf = tuner.tune(0)
 

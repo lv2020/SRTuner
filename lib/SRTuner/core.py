@@ -372,7 +372,6 @@ class SRTunerModule():
         assert(len(node_list) == self.num_optimizations+1)  # num_opts + leaf node
         root = node_list[-1]
         assert(root.depth == 0)
-        
         for node in node_list:
             reward = self.reward_func(perf, self.best_perf, len(node.history))
             node.num += 1

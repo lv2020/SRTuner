@@ -33,7 +33,7 @@ class Tuner:
         self.args = args
         self.name = name
         self.default_setting = default_setting
-        self.default_perf = evaluator.evaluate(default_setting)
+        self.default_perf = evaluator.evaluate(default_setting)[-1]
         self.visited = set()
 
         print(f"default_perf : {self.default_perf:.3f}")
@@ -66,9 +66,9 @@ class Tuner:
                     break
 
             candidates = self.generate_candidates(batch_size=batch_size)
-            res = self.evaluate_candidates(candidates)
+            res = self.evaluate_candidates(candidates)[0]
             res.append(time.time() - begin)
-            perf = res[-1]
+            perfs = [res[-2]]
             op_his.append(res)
             i += len(candidates)
             for opt_setting, perf in zip(candidates, perfs):
