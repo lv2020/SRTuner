@@ -201,7 +201,7 @@ class cBenchEvaluator(Evaluator):
         compile_time = time.time() - compile_begin
         if error == -1:
             # Bulid error
-            return FLOAT_MAX
+            return [flags, FLOAT_MAX, FLOAT_MAX]
 
         # If not specified, use the default number of repeats
         if num_repeats == -1:
