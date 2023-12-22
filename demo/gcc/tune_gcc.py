@@ -122,6 +122,7 @@ class cBenchEvaluator(Evaluator):
                 try:
                     return_code = process.wait(timeout=1000)
                 except:
+                    os.chdir(cwd)
                     return FLOAT_MAX
             e = time.time() - s
             os.popen(f'rm -f {self.compile_config["exe_file"]}').read()
