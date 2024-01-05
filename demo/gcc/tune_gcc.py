@@ -245,6 +245,7 @@ if __name__ == "__main__":
     parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--steps', type = int, default = 120)
     parser.add_argument('--time_limitation', type = int, default = None)
+    parser.add_argument('--algo', type = str, default = 'srtuner')
     args = parser.parse_args()
 
     '''
@@ -272,7 +273,9 @@ if __name__ == "__main__":
 
     os.chdir(args.run_dir)
     evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
-    tuners = [SRTuner(search_space, evaluator, args, default_setting), RandomTuner(search_space, evaluator, args, default_setting)]
-    for tuner in tuners:
-        best_opt_setting, best_perf = tuner.tune(0)
+    if args.algo == 'srtuner':
+        tuner = SRTuner(search_space, evaluator, args, default_setting)
+    else:
+        tuner = RandomTuner(search_space, evaluator, args, default_setting)
+    best_opt_setting, best_perf = tuner.tune(0)
 
