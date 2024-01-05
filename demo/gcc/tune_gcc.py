@@ -268,7 +268,7 @@ if __name__ == "__main__":
     '''
     gcc_optimization_info = "gcc_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
-    default_setting = {"stdOptLv":1}
+    default_setting = {"stdOptLv":3}
 
     os.chdir(args.run_dir)
     evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)

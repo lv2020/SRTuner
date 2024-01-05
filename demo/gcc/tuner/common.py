@@ -33,7 +33,11 @@ class Tuner:
         self.args = args
         self.name = name
         self.default_setting = default_setting
-        self.default_perf = evaluator.evaluate(default_setting)[-1]
+        self.op_his = []
+        tmp = evaluator.evaluate(default_setting)
+        tmp.append(0)
+        self.default_perf = tmp[-2]
+        self.op_his.append(tmp)
         self.visited = set()
 
         print(f"default_perf : {self.default_perf:.3f}")
