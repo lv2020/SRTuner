@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     # Extract GCC search space
     search_space = read_gcc_opts(gcc_optimization_info)
-    default_setting = {"stdOptLv":3}
+    default_setting = {"stdOptLv":3}    
 
     with open("tuning_result.txt", "w") as ofp:
         ofp.write("=== Result ===\n")
