@@ -58,12 +58,12 @@ class Tuner:
         begin = time.time()
         while 1:
             if self.args.time_limitation:
-                with open(f'{self.args.args.run_dir}/{self.args.env}_{self.args.time_limitation}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
+                with open(f'{self.args.run_dir}/{self.args.env}_{self.args.time_limitation}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
                     pickle.dump(self.op_his, f)
                 if time.time() - begin > self.args.time_limitation:
                     break
             else:
-                with open(f'{self.args.args.run_dir}/{self.args.env}_{self.args.steps}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
+                with open(f'{self.args.run_dir}/{self.args.env}_{self.args.steps}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
                     pickle.dump(self.op_his, f)
                 if i > self.args.steps:
                     break
