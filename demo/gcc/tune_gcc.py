@@ -100,12 +100,15 @@ class cBenchEvaluator(Evaluator):
             return -1
         return 0
         '''
-        config = self.compile_config
         op_seq = str_opt_setting
+        if 'spec' in self.run_dir.lower():
+            src_folder = self.run_dir
+        #clean and build executable file
         load_lib = ''
         if os.path.exists('libfunc.so'):
             load_lib = '-L. -lfunc'
         s = time.time()
+        config = self.compile_config
         m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.o').read()
         for f in config['files']:
             #for c++
@@ -113,10 +116,16 @@ class cBenchEvaluator(Evaluator):
                 CC = 'g++ -w '
             else:
                 CC = 'gcc -w '
-            m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
-        m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
-        if not os.path.exists(config['exe_file']):
-            return -1
+            if src_folder:
+                m = os.popen(f'{CC} {op_seq} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -c {src_folder}/{f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
+            else:
+                m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
+            
+        if src_folder:
+            m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} -I{src_folder}/ {config["link_lib"].replace("-I", f"-I{src_folder}")} {load_lib} > tmp').read()
+        else:
+            m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
+        compile_time = time.time() - s
         return 0
 
     def get_timing_result(self):
@@ -124,8 +133,6 @@ class cBenchEvaluator(Evaluator):
         #run spec programs
         if 'spec' in cwd:
             pid = cwd.split('/')[-1]
-            os.chdir(f'../../spec_programs/{pid}')
-            os.popen(f'cp ../../spec_benchmarks/{pid}/{self.compile_config["exe_file"]} ./').read()
             s = time.time()
             for cmd in self.compile_config['run']:
                 process = subprocess.Popen(f'./{self.compile_config["exe_file"]} {cmd}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
