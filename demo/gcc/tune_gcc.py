@@ -110,7 +110,7 @@ class cBenchEvaluator(Evaluator):
             load_lib = '-L. -lfunc'
         s = time.time()
         config = self.compile_config
-        m = os.popen(f'rsm -f {config["exe_file"]}; rm -f *.o').read()
+        m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.o').read()
         for f in config['files']:
             #for c++
             if f.endswith('.cpp') or f.endswith('.cc'):
