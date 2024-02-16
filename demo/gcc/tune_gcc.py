@@ -130,21 +130,17 @@ class cBenchEvaluator(Evaluator):
         return 0
 
     def get_timing_result(self):
-        cwd = os.getcwd()
         #run spec programs
-        if 'spec' in cwd:
-            pid = cwd.split('/')[-1]
+        if 'spec' in args.run_dir:
             s = time.time()
             for cmd in self.compile_config['run']:
                 process = subprocess.Popen(f'./{self.compile_config["exe_file"]} {cmd}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
                 try:
                     return_code = process.wait(timeout=1000)
                 except:
-                    os.chdir(cwd)
                     return FLOAT_MAX
             e = time.time() - s
             os.popen(f'rm -f {self.compile_config["exe_file"]}').read()
-            os.chdir(cwd)
             if return_code != 0:
                 return FLOAT_MAX
             return e
