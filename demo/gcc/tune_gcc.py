@@ -102,8 +102,8 @@ class cBenchEvaluator(Evaluator):
         '''
         op_seq = str_opt_setting
         src_folder = None
-        if 'spec' in self.run_dir.lower():
-            src_folder = self.run_dir
+        if 'spec' in args.run_dir.lower():
+            src_folder = args.run_dir
         #clean and build executable file
         load_lib = ''
         if os.path.exists('libfunc.so'):
