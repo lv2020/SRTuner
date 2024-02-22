@@ -147,7 +147,11 @@ class cBenchEvaluator(Evaluator):
         #for MiBench and PolyBench
         else:
             res = []
-            for i in range(10):
+            if 'MediaBench_h264enc' in args.run_dir:
+                run_count = 5
+            else:
+                run_count = 10
+            for i in range(run_count):
                 process = subprocess.Popen(f'LD_LIBRARY_PATH=. ./{self.compile_config["exe_file"]} {self.compile_config["run"]}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
                 try:
                     output, error = process.communicate(timeout = 60)
