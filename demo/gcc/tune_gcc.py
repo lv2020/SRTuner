@@ -292,7 +292,7 @@ if __name__ == "__main__":
 
     os.chdir(args.run_dir)
     evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
-    tuner = SRTuner(search_space, evaluator, args, default_setting)
     build_env()
+    tuner = SRTuner(search_space, evaluator, args, default_setting)
     best_opt_setting, best_perf = tuner.tune(0)
 
