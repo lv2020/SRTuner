@@ -291,8 +291,8 @@ if __name__ == "__main__":
         del search_space['-fpack-struct']
 
     os.chdir(args.run_dir)
+    build_env()
     evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
     tuner = SRTuner(search_space, evaluator, args, default_setting)
-    build_env()
     best_opt_setting, best_perf = tuner.tune(0)
 
