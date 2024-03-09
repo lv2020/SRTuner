@@ -85,7 +85,7 @@ class cBenchEvaluator(Evaluator):
         super().__init__(path, num_repeats)
         self.artifact = artifact
         self.search_space = search_space
-        self.compile_config = json.load(open('new_config.f'))
+        self.compile_config = json.load(open(f'{args.run_dir}/new_config.f'))
 
     def build(self, str_opt_setting):
         '''
