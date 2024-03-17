@@ -121,7 +121,6 @@ class cBenchEvaluator(Evaluator):
                 m = os.popen(f'{CC} {op_seq} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -c {src_folder}/{f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
             else:
                 m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
-            
         if src_folder:
             m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} -I{src_folder}/ {config["link_lib"].replace("-I", f"-I{src_folder}")} {load_lib} > tmp').read()
         else:
@@ -286,7 +285,10 @@ if __name__ == "__main__":
     '''
     gcc_optimization_info = "gcc_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
-    default_setting = {"stdOptLv":3}
+    if 'perlbench' in args.run_dir.lower():
+        default_setting = {"stdOptLv":1}
+    else:
+        default_setting = {"stdOptLv":3}
     if 'liver' in args.run_dir:
         del search_space['-fpack-struct']
 
@@ -295,4 +297,3 @@ if __name__ == "__main__":
     evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
     tuner = SRTuner(search_space, evaluator, args, default_setting)
     best_opt_setting, best_perf = tuner.tune(0)
-
