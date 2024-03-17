@@ -138,10 +138,10 @@ class cBenchEvaluator(Evaluator):
                     return_code = process.wait(timeout=1000)
                 except:
                     return FLOAT_MAX
+                if return_code != 0:
+                    return FLOAT_MAX
             e = time.time() - s
             os.popen(f'rm -f {self.compile_config["exe_file"]}').read()
-            if return_code != 0:
-                return FLOAT_MAX
             return e
         #for MiBench and PolyBench
         else:
