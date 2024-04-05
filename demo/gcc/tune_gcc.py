@@ -168,7 +168,7 @@ class cBenchEvaluator(Evaluator):
             else:
                 run_count = 10
             for i in range(run_count):
-                if 'liverc' in args.run_dir:
+                if 'liver' in args.run_dir:
                     process = subprocess.Popen(f'LD_LIBRARY_PATH=/home/e/e0509838/Project/llvm/lib:. ./{self.compile_config["exe_file"]} {self.compile_config["run"]}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
                 else:
                     process = subprocess.Popen(f'LD_LIBRARY_PATH=. ./{self.compile_config["exe_file"]} {self.compile_config["run"]}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
