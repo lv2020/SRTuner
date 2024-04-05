@@ -300,13 +300,13 @@ if __name__ == "__main__":
                 with open("tuning_result.txt", "a") as ofp:
                     ofp.write(f"Tuning {benchmark} w/ {tuner.name}: {default_perf:.3f}/{best_perf:.3f} = {default_perf/best_perf:.3f}x\n")
     '''
-    gcc_optimization_info = "gcc_opts.txt"
+    gcc_optimization_info = "llvm_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
     if 'perlbench' in args.run_dir.lower():
         default_setting = {"stdOptLv":1}
     else:
         default_setting = {"stdOptLv":3}
-    if 'liver' in args.run_dir:
+    if 'liver' in args.run_dir and '-fpack-struct' in search_space:
         del search_space['-fpack-struct']
 
     os.chdir(args.run_dir)
