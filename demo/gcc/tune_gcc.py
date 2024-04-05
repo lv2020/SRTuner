@@ -11,12 +11,12 @@ def build_env():
     cwd = os.getcwd()
     idx = cwd.split('/')[-1]
     #prepare parallel run environment, build local directory
-    os.popen(f'mkdir -p /temp/_test{idx}').read()
+    os.popen(f'mkdir -p /tmp/_test{idx}').read()
     if 'spec' in os.getcwd().lower():
-        os.popen(f'cp -r ../../spec_programs/{idx}/* /temp/_test{idx}').read()
+        os.popen(f'cp -r ../../spec_programs/{idx}/* /tmp/_test{idx}').read()
     else:
-        os.popen(f'rsync -av --exclude="*.pkl" ./ /temp/_test{idx}/').read()
-    os.chdir(f'/temp/_test{idx}')
+        os.popen(f'rsync -av --exclude="*.pkl" ./ /tmp/_test{idx}/').read()
+    os.chdir(f'/tmp/_test{idx}')
 # Define GCC flags
 class GCCFlagInfo(FlagInfo):
     def __init__(self, name, configs, isParametric, stdOptLv):
@@ -73,9 +73,11 @@ def convert_to_str(opt_setting, search_space):
             assert(isinstance(config, bool))
             if config:
                 str_opt_setting += f" {flag_name}"
+            '''
             else:
                 negated_flag_name = flag_name.replace("-f", "-fno-", 1)
                 str_opt_setting += f" {negated_flag_name}"
+            '''
     return str_opt_setting
 
 
@@ -86,20 +88,8 @@ class cBenchEvaluator(Evaluator):
         self.artifact = artifact
         self.search_space = search_space
         self.compile_config = json.load(open(f'{args.run_dir}/new_config.f'))
-
+    '''
     def build(self, str_opt_setting):
-        '''
-        commands = f"""cd {self.path};
-        make clean > /dev/null 2>/dev/null;
-        make -j4 CCC_OPTS_ADD="{str_opt_setting}" LD_OPTS=" -o {self.artifact} -fopenmp" > /dev/null 2>/dev/null;
-        """
-        subprocess.Popen(commands, stdout=subprocess.PIPE, shell=True).wait()
-
-        # Check if build fails
-        if not os.path.exists(self.path + "/" + self.artifact):
-            return -1
-        return 0
-        '''
         op_seq = str_opt_setting
         src_folder = None
         if 'spec' in args.run_dir.lower():
@@ -126,6 +116,33 @@ class cBenchEvaluator(Evaluator):
         else:
             m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
         compile_time = time.time() - s
+        return 0
+    '''
+    def build(self, str_opt_setting):
+        op_seq = str_opt_setting
+        src_folder = None
+        if 'spec' in args.run_dir.lower():
+            src_folder = args.run_dir
+        load_lib = ''
+        if os.path.exists('libfunc.so'):
+            load_lib = '-L. -lfunc'
+        #clean and build executable file with gcc
+        s = time.time()
+        config = self.compile_config
+        m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.ll; rm -f *.o').read()
+        for f in config['files']:
+            #for c++
+            if f.endswith('.cpp') or f.endswith('.cc'):
+                CC = '/home/e/e0509838/Project/llvm/bin/clang++ -w -stdlib=libc++'
+            else:
+                CC = '/home/e/e0509838/Project/llvm/bin/clang -w '
+            base_filename = f.replace("/", "_").replace("..", "").split('.')[0]
+            if src_folder:
+                m = os.popen(f'{CC} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -S -emit-llvm -c -c {src_folder}/{f} -o {base_filename}.ll').read()
+            else:
+                m = os.popen(f'{CC} {config["lib"]} -S -emit-llvm -c {f} -o {base_filename}.ll {load_lib}').read()
+            m = os.popen(f'/home/e/e0509838/Project/llvm/bin/opt {op_seq} {base_filename}.ll -o {base_filename}.opt.ll').read()
+        m = os.popen(f'{CC} *.opt.ll -o {config["exe_file"]} {config["link_lib"]} {load_lib}').read()
         return 0
 
     def get_timing_result(self):
