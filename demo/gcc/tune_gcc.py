@@ -88,62 +88,62 @@ class cBenchEvaluator(Evaluator):
         self.artifact = artifact
         self.search_space = search_space
         self.compile_config = json.load(open(f'{args.run_dir}/new_config.f'))
-    '''
+
     def build(self, str_opt_setting):
-        op_seq = str_opt_setting
-        src_folder = None
-        if 'spec' in args.run_dir.lower():
-            src_folder = args.run_dir
-        #clean and build executable file
-        load_lib = ''
-        if os.path.exists('libfunc.so'):
-            load_lib = '-L. -lfunc'
-        s = time.time()
-        config = self.compile_config
-        m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.o').read()
-        for f in config['files']:
-            #for c++
-            if f.endswith('.cpp') or f.endswith('.cc'):
-                CC = 'g++ -w '
-            else:
-                CC = 'gcc -w '
+        if args.env == 'gcc':
+            op_seq = str_opt_setting
+            src_folder = None
+            if 'spec' in args.run_dir.lower():
+                src_folder = args.run_dir
+            #clean and build executable file
+            load_lib = ''
+            if os.path.exists('libfunc.so'):
+                load_lib = '-L. -lfunc'
+            s = time.time()
+            config = self.compile_config
+            m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.o').read()
+            for f in config['files']:
+                #for c++
+                if f.endswith('.cpp') or f.endswith('.cc'):
+                    CC = 'g++ -w '
+                else:
+                    CC = 'gcc -w '
+                if src_folder:
+                    m = os.popen(f'{CC} {op_seq} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -c {src_folder}/{f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
+                else:
+                    m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
             if src_folder:
-                m = os.popen(f'{CC} {op_seq} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -c {src_folder}/{f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
+                m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} -I{src_folder}/ {config["link_lib"].replace("-I", f"-I{src_folder}")} {load_lib} > tmp').read()
             else:
-                m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
-        if src_folder:
-            m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} -I{src_folder}/ {config["link_lib"].replace("-I", f"-I{src_folder}")} {load_lib} > tmp').read()
+                m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
+            compile_time = time.time() - s
+            return 0
         else:
-            m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
-        compile_time = time.time() - s
-        return 0
-    '''
-    def build(self, str_opt_setting):
-        op_seq = str_opt_setting
-        src_folder = None
-        if 'spec' in args.run_dir.lower():
-            src_folder = args.run_dir
-        load_lib = ''
-        if os.path.exists('libfunc.so'):
-            load_lib = '-L. -lfunc'
-        #clean and build executable file with gcc
-        s = time.time()
-        config = self.compile_config
-        m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.ll; rm -f *.o').read()
-        for f in config['files']:
-            #for c++
-            if f.endswith('.cpp') or f.endswith('.cc'):
-                CC = '/home/e/e0509838/Project/llvm/bin/clang++ -w -stdlib=libc++'
-            else:
-                CC = '/home/e/e0509838/Project/llvm/bin/clang -w '
-            base_filename = f.replace("/", "_").replace("..", "").split('.')[0]
-            if src_folder:
-                m = os.popen(f'{CC} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -S -emit-llvm -c -c {src_folder}/{f} -o {base_filename}.ll').read()
-            else:
-                m = os.popen(f'{CC} {config["lib"]} -S -emit-llvm -c {f} -o {base_filename}.ll {load_lib}').read()
-            m = os.popen(f'/home/e/e0509838/Project/llvm/bin/opt {op_seq} {base_filename}.ll -o {base_filename}.opt.ll').read()
-        m = os.popen(f'{CC} *.opt.ll -o {config["exe_file"]} {config["link_lib"]} {load_lib}').read()
-        return 0
+            op_seq = str_opt_setting
+            src_folder = None
+            if 'spec' in args.run_dir.lower():
+                src_folder = args.run_dir
+            load_lib = ''
+            if os.path.exists('libfunc.so'):
+                load_lib = '-L. -lfunc'
+            #clean and build executable file with gcc
+            s = time.time()
+            config = self.compile_config
+            m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.ll; rm -f *.o').read()
+            for f in config['files']:
+                #for c++
+                if f.endswith('.cpp') or f.endswith('.cc'):
+                    CC = '/home/e/e0509838/Project/llvm/bin/clang++ -w -stdlib=libc++'
+                else:
+                    CC = '/home/e/e0509838/Project/llvm/bin/clang -w '
+                base_filename = f.replace("/", "_").replace("..", "").split('.')[0]
+                if src_folder:
+                    m = os.popen(f'{CC} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -S -emit-llvm -c -c {src_folder}/{f} -o {base_filename}.ll').read()
+                else:
+                    m = os.popen(f'{CC} {config["lib"]} -S -emit-llvm -c {f} -o {base_filename}.ll {load_lib}').read()
+                m = os.popen(f'/home/e/e0509838/Project/llvm/bin/opt {op_seq} {base_filename}.ll -o {base_filename}.opt.ll').read()
+            m = os.popen(f'{CC} *.opt.ll -o {config["exe_file"]} {config["link_lib"]} {load_lib}').read()
+            return 0
 
     def get_timing_result(self):
         #run spec programs
@@ -168,7 +168,7 @@ class cBenchEvaluator(Evaluator):
             else:
                 run_count = 10
             for i in range(run_count):
-                if 'liver' in args.run_dir:
+                if 'liver' in args.run_dir and args.env == 'llvm':
                     process = subprocess.Popen(f'LD_LIBRARY_PATH=/home/e/e0509838/Project/llvm/lib:. ./{self.compile_config["exe_file"]} {self.compile_config["run"]}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
                 else:
                     process = subprocess.Popen(f'LD_LIBRARY_PATH=. ./{self.compile_config["exe_file"]} {self.compile_config["run"]}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
@@ -303,7 +303,10 @@ if __name__ == "__main__":
                 with open("tuning_result.txt", "a") as ofp:
                     ofp.write(f"Tuning {benchmark} w/ {tuner.name}: {default_perf:.3f}/{best_perf:.3f} = {default_perf/best_perf:.3f}x\n")
     '''
-    gcc_optimization_info = "llvm_opts.txt"
+    if args.env == 'gcc':
+        gcc_optimization_info = "gcc_opts.txt"
+    else:
+        gcc_optimization_info = "llvm_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
     if 'perlbench' in args.run_dir.lower():
         default_setting = {"stdOptLv":1}
