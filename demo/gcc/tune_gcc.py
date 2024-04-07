@@ -11,12 +11,12 @@ def build_env():
     cwd = os.getcwd()
     idx = cwd.split('/')[-1]
     #prepare parallel run environment, build local directory
-    os.popen(f'mkdir -p /temp/_test{idx}').read()
+    os.popen(f'mkdir -p /tmp/_test{idx}').read()
     if 'spec' in os.getcwd().lower():
-        os.popen(f'cp -r ../../spec_programs/{idx}/* /temp/_test{idx}').read()
+        os.popen(f'cp -r ../../spec_programs/{idx}/* /tmp/_test{idx}').read()
     else:
-        os.popen(f'rsync -av --exclude="*.pkl" ./ /temp/_test{idx}/').read()
-    os.chdir(f'/temp/_test{idx}')
+        os.popen(f'rsync -av --exclude="*.pkl" ./ /tmp/_test{idx}/').read()
+    os.chdir(f'/tmp/_test{idx}')
 # Define GCC flags
 class GCCFlagInfo(FlagInfo):
     def __init__(self, name, configs, isParametric, stdOptLv):
