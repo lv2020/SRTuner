@@ -129,7 +129,7 @@ class cBenchEvaluator(Evaluator):
             #clean and build executable file with gcc
             s = time.time()
             config = self.compile_config
-            m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.ll; rm -f *.o').read()
+            m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.bc; rm -f *.o').read()
             for f in config['files']:
                 #for c++
                 if f.endswith('.cpp') or f.endswith('.cc'):
@@ -138,11 +138,12 @@ class cBenchEvaluator(Evaluator):
                     CC = '/home/e/e0509838/Project/llvm/bin/clang -w '
                 base_filename = f.replace("/", "_").replace("..", "").split('.')[0]
                 if src_folder:
-                    m = os.popen(f'{CC} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -S -emit-llvm -c -c {src_folder}/{f} -o {base_filename}.ll').read()
+                    m = os.popen(f'{CC} -O0 -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -emit-llvm -c {src_folder}/{f} -o {base_filename}.bc').read()
                 else:
-                    m = os.popen(f'{CC} {config["lib"]} -S -emit-llvm -c {f} -o {base_filename}.ll {load_lib}').read()
-                m = os.popen(f'/home/e/e0509838/Project/llvm/bin/opt {op_seq} {base_filename}.ll -o {base_filename}.opt.ll').read()
-            m = os.popen(f'{CC} *.opt.ll -o {config["exe_file"]} {config["link_lib"]} {load_lib}').read()
+                    m = os.popen(f'{CC} {config["lib"]} -O0 -emit-llvm -c {f} -o {base_filename}.bc {load_lib}').read()
+                m = os.popen(f'/home/e/e0509838/Project/llvm/bin/opt -S {op_seq} {base_filename}.bc -o {base_filename}.opt.bc').read()
+                m = os.popen(f'/home/e/e0509838/Project/llvm/bin/llc -O0 -filetype=obj {base_filename}.opt.bc').read()
+            m = os.popen(f'{CC} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib}').read()
             return 0
 
     def get_timing_result(self):
