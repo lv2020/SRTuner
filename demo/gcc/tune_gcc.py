@@ -148,19 +148,26 @@ class cBenchEvaluator(Evaluator):
 
     def get_timing_result(self):
         #run spec programs
-        if 'spec' in args.run_dir:
-            s = time.time()
-            for cmd in self.compile_config['run']:
-                process = subprocess.Popen(f'./{self.compile_config["exe_file"]} {cmd}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
-                try:
-                    return_code = process.wait(timeout=1000)
-                except:
-                    return FLOAT_MAX
-                if return_code != 0:
-                    return FLOAT_MAX
-            e = time.time() - s
+        if 'spec' in args.run_dir or 'origin' in args.run_dir:
+            if 'spec' in args.run_dir:
+                run_count = 1
+            else:
+                run_count = 5
+            res = []
+            for i in range(run_count):
+                s = time.time()
+                for cmd in self.compile_config['run']:
+                    process = subprocess.Popen(f'./{self.compile_config["exe_file"]} {cmd}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
+                    try:
+                        return_code = process.wait(timeout=1000)
+                    except:
+                        return FLOAT_MAX
+                    if return_code != 0:
+                        return FLOAT_MAX
+                e = time.time() - s
+                res.append(e)
             os.popen(f'rm -f {self.compile_config["exe_file"]}').read()
-            return e
+            return np.median(res)
         #for MiBench and PolyBench
         else:
             res = []

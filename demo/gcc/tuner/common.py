@@ -53,20 +53,27 @@ class Tuner:
         assert 0, "Undefined"
 
     def tune(self, budget, batch_size=1):
+        RUN_CYCLE = pickle.load(open(f'{self.args.run_dir}/gcc_proba_top_diff_history1_{self.args.random_seed}_6000_0.9_0.0_0.0_1_full.pkl', 'rb'))[0][-2]
         best_opt_setting, best_perf = None, FLOAT_MAX
         i = 0
         begin = time.time()
         while 1:
-            if self.args.time_limitation:
-                with open(f'{self.args.run_dir}/{self.args.env}_{self.args.time_limitation}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
+            if 'origin' in self.args.run_dir:
+                with open(f'{self.args.run_dir}/{self.args.env}_origin_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
                     pickle.dump(self.op_his, f)
-                if time.time() - begin > self.args.time_limitation:
+                if i > 105 and time.time() - begin > max(6000, 400 * RUN_CYCLE):
                     break
             else:
-                with open(f'{self.args.run_dir}/{self.args.env}_{self.args.steps}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
-                    pickle.dump(self.op_his, f)
-                if i > self.args.steps:
-                    break
+                if self.args.time_limitation:
+                    with open(f'{self.args.run_dir}/{self.args.env}_{self.args.time_limitation}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
+                        pickle.dump(self.op_his, f)
+                    if time.time() - begin > self.args.time_limitation:
+                        break
+                else:
+                    with open(f'{self.args.run_dir}/{self.args.env}_{self.args.steps}_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
+                        pickle.dump(self.op_his, f)
+                    if i > self.args.steps:
+                        break
 
             candidates = self.generate_candidates(batch_size=batch_size)
             res = self.evaluate_candidates(candidates)[0]
