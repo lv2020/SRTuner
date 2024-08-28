@@ -61,7 +61,7 @@ class Tuner:
             if 'origin' in self.args.run_dir:
                 with open(f'{self.args.run_dir}/{self.args.env}_origin_local_SRTuner_{self.args.random_seed}.pkl', 'wb') as f:
                     pickle.dump(self.op_his, f)
-                if i > 105 and time.time() - begin > max(6000, 400 * RUN_CYCLE):
+                if i > 120 and time.time() - begin > 6000:
                     break
             else:
                 if self.args.time_limitation:
