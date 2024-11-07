@@ -1,4 +1,4 @@
-import os, subprocess, re
+import os, subprocess, re, sys
 
 from tuner import FlagInfo, Evaluator, FLOAT_MAX
 from tuner import RandomTuner, SRTuner
@@ -7,16 +7,13 @@ import json
 import argparse
 import time
 import numpy as np
-def build_env():
-    cwd = os.getcwd()
-    idx = cwd.split('/')[-1]
-    #prepare parallel run environment, build local directory
-    os.popen(f'mkdir -p /tmp/_test{idx}').read()
-    if 'spec' in os.getcwd().lower():
-        os.popen(f'cp -r ../../spec_programs/{idx}/* /tmp/_test{idx}').read()
-    else:
-        os.popen(f'rsync -av --exclude="*.pkl" ./ /tmp/_test{idx}/').read()
-    os.chdir(f'/tmp/_test{idx}')
+if 'x' in os.popen('hostname').read():
+    project_path = os.path.abspath('/home/e/e0509838/Project/RL_tuner/gym_compiler/envs')
+else:
+    project_path = os.path.abspath('/home/liwei/Project/RL_method/gym_compiler/envs')
+sys.path.insert(0, project_path)
+from compiler_env import *
+
 # Define GCC flags
 class GCCFlagInfo(FlagInfo):
     def __init__(self, name, configs, isParametric, stdOptLv):
@@ -83,11 +80,12 @@ def convert_to_str(opt_setting, search_space):
 
 # Define tuning task
 class cBenchEvaluator(Evaluator):
-    def __init__(self, path, num_repeats, search_space, artifact="a.out"):
+    def __init__(self, env, path, num_repeats, search_space, artifact="a.out"):
         super().__init__(path, num_repeats)
+        self.env = env
         self.artifact = artifact
         self.search_space = search_space
-        self.compile_config = json.load(open(f'{args.run_dir}/new_config.f'))
+        #self.compile_config = json.load(open(f'{args.run_dir}/new_config.f'))
 
     def build(self, str_opt_setting):
         if args.env == 'gcc':
@@ -242,22 +240,11 @@ class cBenchEvaluator(Evaluator):
 
     def evaluate(self, opt_setting, num_repeats=-1):
         flags = convert_to_str(opt_setting, self.search_space)
-        compile_begin = time.time()
-        error = self.build(flags)
-        compile_time = time.time() - compile_begin
-        if error == -1:
-            # Bulid error
-            return [flags, FLOAT_MAX, FLOAT_MAX]
-
-        # If not specified, use the default number of repeats
-        if num_repeats == -1:
-            num_repeats = self.num_repeats
-
-        perf = self.run(num_repeats, input_id=2)
-        #self.clean()
-
-        #return perf
-        return [flags, compile_time, perf]
+        compile_time, run_time = self.env.run_single(flags)[0]
+        run_time = np.median(run_time)
+        if run_time == np.inf:
+            return [flags, compile_time, FLOAT_MAX]
+        return [flags, compile_time, run_time]
 
 
     def clean(self):
@@ -324,7 +311,7 @@ if __name__ == "__main__":
         del search_space['-fpack-struct']
 
     os.chdir(args.run_dir)
-    build_env()
-    evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
+    env = CompilerEnv('gcc', [i for i in search_space], args.run_dir, None, None, args.random_seed, args.steps, args.time_limitation)
+    evaluator = cBenchEvaluator(env, './', num_repeats=30, search_space=search_space)
     tuner = SRTuner(search_space, evaluator, args, default_setting)
     best_opt_setting, best_perf = tuner.tune(0)

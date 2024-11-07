@@ -53,7 +53,7 @@ class Tuner:
         assert 0, "Undefined"
 
     def tune(self, budget, batch_size=1):
-        RUN_CYCLE = pickle.load(open(f'{self.args.run_dir}/gcc_proba_top_diff_history1_{self.args.random_seed}_6000_0.9_0.0_0.0_1_full.pkl', 'rb'))[0][-2]
+        #RUN_CYCLE = pickle.load(open(f'{self.args.run_dir}/gcc_proba_top_diff_history1_{self.args.random_seed}_6000_0.9_0.0_0.0_1_full.pkl', 'rb'))[0][-2]
         best_opt_setting, best_perf = None, FLOAT_MAX
         i = 0
         begin = time.time()
