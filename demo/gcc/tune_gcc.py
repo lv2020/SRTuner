@@ -303,7 +303,7 @@ if __name__ == "__main__":
     else:
         gcc_optimization_info = "llvm_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
-    if 'perlbench' in args.run_dir.lower():
+    if 'perlbench' in args.run_dir.lower() or 'mibench_office_rsynth' in args.run_dir.lower():
         default_setting = {"stdOptLv":1}
     else:
         default_setting = {"stdOptLv":3}
