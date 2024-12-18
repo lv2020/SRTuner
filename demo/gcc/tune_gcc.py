@@ -7,6 +7,14 @@ import json
 import argparse
 import time
 import numpy as np
+import sys
+
+if 'x' in os.popen('hostname').read():
+    project_path = os.path.abspath('/home/e/e0509838/Project/RL_tuner/gym_compiler/envs')
+else:
+    project_path = os.path.abspath('/home/liwei/Project/RL_method/gym_compiler/envs')
+sys.path.insert(0, project_path)
+from compiler_env import *
 # Define GCC flags
 class GCCFlagInfo(FlagInfo):
     def __init__(self, name, configs, isParametric, stdOptLv):
@@ -197,22 +205,11 @@ class cBenchEvaluator(Evaluator):
 
     def evaluate(self, opt_setting, num_repeats=-1):
         flags = convert_to_str(opt_setting, self.search_space)
-        compile_begin = time.time()
-        error = self.build(flags)
-        compile_time = time.time() - compile_begin
-        if error == -1:
-            # Bulid error
-            return [flags, FLOAT_MAX, FLOAT_MAX]
-
-        # If not specified, use the default number of repeats
-        if num_repeats == -1:
-            num_repeats = self.num_repeats
-
-        perf = self.run(num_repeats, input_id=2)
-        #self.clean()
-
-        #return perf
-        return [flags, compile_time, perf]
+        compile_time, run_time = self.env.run_single(flags)[0]
+        run_time = np.median(run_time)
+        if run_time == np.inf:
+            return [flags, compile_time, FLOAT_MAX]
+        return [flags, compile_time, run_time]
 
 
     def clean(self):
@@ -269,13 +266,16 @@ if __name__ == "__main__":
     '''
     gcc_optimization_info = "gcc_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
-    default_setting = {"stdOptLv":3}
+    if 'perlbench' in args.run_dir.lower() or 'mibench_office_rsynth' in args.run_dir.lower():
+        default_setting = {"stdOptLv":1}
+    else:
+        default_setting = {"stdOptLv":3}
+    if 'liver' in args.run_dir and '-fpack-struct' in search_space:
+        del search_space['-fpack-struct']
 
     os.chdir(args.run_dir)
-    evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
-    if args.algo == 'srtuner':
-        tuner = SRTuner(search_space, evaluator, args, default_setting)
-    else:
-        tuner = RandomTuner(search_space, evaluator, args, default_setting)
+    env = CompilerEnv('gcc', [i for i in search_space], args.run_dir, None, None, args.random_seed, args.steps, args.time_limitation)
+    evaluator = cBenchEvaluator(env, './', num_repeats=30, search_space=search_space)
+    tuner = SRTuner(search_space, evaluator, args, default_setting)
     best_opt_setting, best_perf = tuner.tune(0)
 
