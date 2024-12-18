@@ -7,16 +7,14 @@ import json
 import argparse
 import time
 import numpy as np
-def build_env():
-    cwd = os.getcwd()
-    idx = cwd.split('/')[-1]
-    #prepare parallel run environment, build local directory
-    os.popen(f'mkdir -p /tmp/_test{idx}').read()
-    if 'spec' in os.getcwd().lower():
-        os.popen(f'cp -r ../../spec_programs/{idx}/* /tmp/_test{idx}').read()
-    else:
-        os.popen(f'rsync -av --exclude="*.pkl" ./ /tmp/_test{idx}/').read()
-    os.chdir(f'/tmp/_test{idx}')
+import sys
+
+if 'x' in os.popen('hostname').read():
+    project_path = os.path.abspath('/home/e/e0509838/Project/RL_tuner/gym_compiler/envs')
+else:
+    project_path = os.path.abspath('/home/liwei/Project/RL_method/gym_compiler/envs')
+sys.path.insert(0, project_path)
+from compiler_env import *
 # Define GCC flags
 class GCCFlagInfo(FlagInfo):
     def __init__(self, name, configs, isParametric, stdOptLv):
@@ -34,7 +32,7 @@ class GCCFlagInfo(FlagInfo):
 def read_gcc_opts(path):
     search_space = dict() # pair: flag, configs
     # special case handling
-    search_space["stdOptLv"] = GCCFlagInfo(name="stdOptLv", configs=[1], isParametric=True, stdOptLv=-1)
+    search_space["stdOptLv"] = GCCFlagInfo(name="stdOptLv", configs=[1,2,3], isParametric=True, stdOptLv=-1)
     with open(path, "r") as fp:
         stdOptLv = 0
         for raw_line in fp.read().split('\n'):
@@ -81,9 +79,10 @@ def convert_to_str(opt_setting, search_space):
 
 # Define tuning task
 class cBenchEvaluator(Evaluator):
-    def __init__(self, path, num_repeats, search_space, artifact="a.out"):
+    def __init__(self, env, path, num_repeats, search_space, artifact="a.out"):
         super().__init__(path, num_repeats)
         self.artifact = artifact
+        self.env = env
         self.search_space = search_space
         self.compile_config = json.load(open('new_config.f'))
 
@@ -100,16 +99,12 @@ class cBenchEvaluator(Evaluator):
             return -1
         return 0
         '''
+        config = self.compile_config
         op_seq = str_opt_setting
-        src_folder = None
-        if 'spec' in args.run_dir.lower():
-            src_folder = args.run_dir
-        #clean and build executable file
         load_lib = ''
         if os.path.exists('libfunc.so'):
             load_lib = '-L. -lfunc'
         s = time.time()
-        config = self.compile_config
         m = os.popen(f'rm -f {config["exe_file"]}; rm -f *.o').read()
         for f in config['files']:
             #for c++
@@ -117,41 +112,37 @@ class cBenchEvaluator(Evaluator):
                 CC = 'g++ -w '
             else:
                 CC = 'gcc -w '
-            if src_folder:
-                m = os.popen(f'{CC} {op_seq} -I{src_folder}/ {config["lib"].replace("-I", f"-I{src_folder}/")} -c {src_folder}/{f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
-            else:
-                m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
-            
-        if src_folder:
-            m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} -I{src_folder}/ {config["link_lib"].replace("-I", f"-I{src_folder}")} {load_lib} > tmp').read()
-        else:
-            m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
-        compile_time = time.time() - s
+            m = os.popen(f'{CC} {op_seq} {config["lib"]} -c {f} -o {f.replace("/", "_").replace("..", "").split(".")[0]}.o {load_lib} > tmp').read()
+        m = os.popen(f'{CC} {op_seq} *.o -o {config["exe_file"]} {config["link_lib"]} {load_lib} > tmp').read()
+        if not os.path.exists(config['exe_file']):
+            return -1
         return 0
 
     def get_timing_result(self):
+        cwd = os.getcwd()
         #run spec programs
-        if 'spec' in args.run_dir:
+        if 'spec' in cwd:
+            pid = cwd.split('/')[-1]
+            os.chdir(f'../../spec_programs/{pid}')
+            os.popen(f'cp ../../spec_benchmarks/{pid}/{self.compile_config["exe_file"]} ./').read()
             s = time.time()
             for cmd in self.compile_config['run']:
                 process = subprocess.Popen(f'./{self.compile_config["exe_file"]} {cmd}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
                 try:
                     return_code = process.wait(timeout=1000)
                 except:
+                    os.chdir(cwd)
                     return FLOAT_MAX
             e = time.time() - s
             os.popen(f'rm -f {self.compile_config["exe_file"]}').read()
+            os.chdir(cwd)
             if return_code != 0:
                 return FLOAT_MAX
             return e
         #for MiBench and PolyBench
         else:
             res = []
-            if 'MediaBench_h264enc' in args.run_dir:
-                run_count = 5
-            else:
-                run_count = 10
-            for i in range(run_count):
+            for i in range(10):
                 process = subprocess.Popen(f'LD_LIBRARY_PATH=. ./{self.compile_config["exe_file"]} {self.compile_config["run"]}', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell = True)
                 try:
                     output, error = process.communicate(timeout = 60)
@@ -215,22 +206,11 @@ class cBenchEvaluator(Evaluator):
 
     def evaluate(self, opt_setting, num_repeats=-1):
         flags = convert_to_str(opt_setting, self.search_space)
-        compile_begin = time.time()
-        error = self.build(flags)
-        compile_time = time.time() - compile_begin
-        if error == -1:
-            # Bulid error
-            return [flags, FLOAT_MAX, FLOAT_MAX]
-
-        # If not specified, use the default number of repeats
-        if num_repeats == -1:
-            num_repeats = self.num_repeats
-
-        perf = self.run(num_repeats, input_id=2)
-        #self.clean()
-
-        #return perf
-        return [flags, compile_time, perf]
+        compile_time, run_time = self.env.run_single(flags)[0]
+        run_time = np.median(run_time)
+        if run_time == np.inf:
+            return [flags, compile_time, FLOAT_MAX]
+        return [flags, compile_time, run_time]
 
 
     def clean(self):
@@ -252,7 +232,7 @@ if __name__ == "__main__":
 
     # Extract GCC search space
     search_space = read_gcc_opts(gcc_optimization_info)
-    default_setting = {"stdOptLv":3}    
+    default_setting = {"stdOptLv":3}
 
     with open("tuning_result.txt", "w") as ofp:
         ofp.write("=== Result ===\n")
@@ -263,6 +243,7 @@ if __name__ == "__main__":
     parser.add_argument('--random_seed', type=int, default=42)
     parser.add_argument('--steps', type = int, default = 120)
     parser.add_argument('--time_limitation', type = int, default = None)
+    parser.add_argument('--algo', type = str, default = 'srtuner')
     args = parser.parse_args()
 
     '''
@@ -286,13 +267,16 @@ if __name__ == "__main__":
     '''
     gcc_optimization_info = "gcc_opts.txt"
     search_space = read_gcc_opts(gcc_optimization_info)
-    default_setting = {"stdOptLv":3}
-    if 'liver' in args.run_dir:
+    if 'perlbench' in args.run_dir.lower() or 'mibench_office_rsynth' in args.run_dir.lower():
+        default_setting = {"stdOptLv":1}
+    else:
+        default_setting = {"stdOptLv":3}
+    if 'liver' in args.run_dir and '-fpack-struct' in search_space:
         del search_space['-fpack-struct']
 
     os.chdir(args.run_dir)
-    evaluator = cBenchEvaluator('./', num_repeats=30, search_space=search_space)
-    build_env()
+    env = CompilerEnv('gcc', [i for i in search_space], args.run_dir, None, None, args.random_seed, args.steps, args.time_limitation)
+    evaluator = cBenchEvaluator(env, './', num_repeats=30, search_space=search_space)
     tuner = SRTuner(search_space, evaluator, args, default_setting)
     best_opt_setting, best_perf = tuner.tune(0)
 
