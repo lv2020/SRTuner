@@ -79,9 +79,10 @@ def convert_to_str(opt_setting, search_space):
 
 # Define tuning task
 class cBenchEvaluator(Evaluator):
-    def __init__(self, path, num_repeats, search_space, artifact="a.out"):
+    def __init__(self, env, path, num_repeats, search_space, artifact="a.out"):
         super().__init__(path, num_repeats)
         self.artifact = artifact
+        self.env = env
         self.search_space = search_space
         self.compile_config = json.load(open('new_config.f'))
 
