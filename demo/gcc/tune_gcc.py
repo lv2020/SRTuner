@@ -10,7 +10,7 @@ import numpy as np
 import sys
 
 if 'x' in os.popen('hostname').read():
-    project_path = os.path.abspath('/home/e/e0509838/Project/RL_tuner/gym_compiler/envs')
+    project_path = os.path.abspath('/mnt/scratch/e/e0509838/Project/RL_tuner/gym_compiler/envs')
 else:
     project_path = os.path.abspath('/home/liwei/Project/RL_method/gym_compiler/envs')
 sys.path.insert(0, project_path)
